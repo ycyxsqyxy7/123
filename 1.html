@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OC 花谱鉴定 · 测测你的 OC 是哪一种花</title>
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Serif+SC:wght@500;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap">
+<style>
+  /* ===== 设计 token ===== */
+  :root {
+    --paper: #F2EEE3;
+    --paper-deep: #E9E3D3;
+    --ink: #2A2A24;
+    --ink-soft: #55544A;
+    --pine: #28352C;
+    --pine-soft: #435447;
+    --gold: #A98F4F;
+    --line: #D6CFBC;
+    --card: #FBF8F0;
+    --shadow: 0 18px 40px rgba(40, 53, 44, 0.14);
+    --radius: 18px;
+    --serif: "Noto Serif SC", "Songti SC", "STSong", serif;
+    --sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(169, 143, 79, 0.08), transparent 42%),
+      radial-gradient(circle at 88% 92%, rgba(40, 53, 44, 0.08), transparent 46%);
+  }
+
+  button { font-family: inherit; cursor: pointer; }
+
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 32px 22px 64px;
+  }
+
+  /* ===== 视图切换 ===== */
+  .view { display: none; animation: fadeIn 0.45s ease; }
+  .view.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .view.active { animation: none; }
+    * { transition: none !important; }
+  }
+
+  /* ===== 首页 ===== */
+  .home-header { text-align: center; padding: 24px 0 8px; }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    letter-spacing: 0.28em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 22px;
+  }
+  .eyebrow::before, .eyebrow::after {
+    content: "";
+    width: 28px; height: 1px;
+    background: var(--gold);
+  }
+
+  .home-title {
+    font-family: var(--serif);
+    font-weight: 900;
+    font-size: clamp(38px, 8vw, 56px);
+    letter-spacing: 0.06em;
+    color: var(--pine);
+    line-height: 1.2;
+  }
+
+  .home-sub {
+    margin-top: 18px;
+    color: var(--ink-soft);
+    font-size: 15.5px;
+    max-width: 460px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .home-art {
+    margin: 34px auto 0;
+    width: min(300px, 78vw);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    background: var(--card);
+    box-shadow: var(--shadow);
+  }
+  .home-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .name-panel {
+    margin-top: 38px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 26px 24px;
+    box-shadow: var(--shadow);
+  }
+  .name-panel label {
+    display: block;
+    font-size: 13px;
+    letter-spacing: 0.16em;
+    color: var(--pine-soft);
+    margin-bottom: 12px;
+  }
+  .name-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .name-row input {
+    flex: 1 1 200px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 16px;
+    font-family: var(--sans);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .name-row input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(169, 143, 79, 0.18);
+  }
+
+  .primary-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: var(--pine);
+    color: var(--paper);
+    border: none;
+    border-radius: 12px;
+    padding: 15px 28px;
+    font-size: 16px;
+    letter-spacing: 0.12em;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .primary-btn:hover { background: var(--pine-soft); }
+  .primary-btn:active { transform: scale(0.98); }
+  .primary-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+
+  .home-notes {
+    margin-top: 26px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    text-align: center;
+  }
+  .note {
+    border: 1px dashed var(--line);
+    border-radius: 14px;
+    padding: 14px 8px;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .note strong {
+    display: block;
+    font-family: var(--serif);
+    font-size: 18px;
+    color: var(--pine);
+    margin-bottom: 2px;
+  }
+
+  /* ===== 答题页 ===== */
+  .quiz-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .quiz-count {
+    font-family: var(--serif);
+    font-size: 15px;
+    color: var(--pine-soft);
+    letter-spacing: 0.1em;
+  }
+  .quiz-count b { color: var(--gold); font-size: 20px; }
+
+  .progress {
+    flex: 1;
+    margin-left: 20px;
+    height: 6px;
+    background: var(--paper-deep);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    width: 0;
+    background: var(--gold);
+    border-radius: 999px;
+    transition: width 0.35s ease;
+  }
+
+  .question {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: clamp(22px, 5vw, 28px);
+    color: var(--pine);
+    line-height: 1.5;
+    margin: 18px 0 26px;
+  }
+
+  .options { display: flex; flex-direction: column; gap: 14px; }
+
+  .option {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    width: 100%;
+    text-align: left;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    font-size: 15.5px;
+    color: var(--ink);
+    transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+  }
+  .option:hover {
+    border-color: var(--gold);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(40, 53, 44, 0.1);
+  }
+  .option:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+
+  .option .mark {
+    flex: 0 0 auto;
+    width: 30px; height: 30px;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--serif);
+    font-size: 14px;
+    color: var(--pine-soft);
+    background: var(--paper);
+  }
+
+  .quiz-foot {
+    margin-top: 26px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .ghost-btn {
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    font-size: 14px;
+    padding: 10px 12px;
+    border-radius: 10px;
+  }
+  .ghost-btn:hover { color: var(--pine); background: var(--paper-deep); }
+  .ghost-btn:disabled { opacity: 0.35; cursor: default; }
+
+  /* ===== 结果页 ===== */
+  .result-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 26px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+
+  .result-hero {
+    position: relative;
+    padding: 30px 26px 0;
+    text-align: center;
+  }
+  .result-index {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    letter-spacing: 0.24em;
+    color: var(--gold);
+  }
+  .result-name {
+    font-family: var(--serif);
+    font-weight: 900;
+    font-size: clamp(30px, 7vw, 40px);
+    color: var(--pine);
+    margin-top: 8px;
+  }
+  .result-latin {
+    font-style: italic;
+    font-size: 14px;
+    color: var(--ink-soft);
+    letter-spacing: 0.05em;
+    margin-top: 4px;
+  }
+  .result-img {
+    margin: 22px auto 0;
+    width: min(260px, 70vw);
+    aspect-ratio: 1;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    background: var(--paper);
+  }
+  .result-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .result-body { padding: 28px 26px 30px; }
+
+  .flower-lang {
+    display: inline-block;
+    padding: 7px 16px;
+    border-radius: 999px;
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    color: var(--paper);
+    margin-bottom: 20px;
+  }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 22px; }
+  .tag {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 13px;
+    color: var(--pine-soft);
+    background: var(--paper);
+  }
+
+  .result-section-title {
+    font-family: var(--serif);
+    font-size: 15px;
+    letter-spacing: 0.14em;
+    color: var(--gold);
+    margin: 20px 0 10px;
+  }
+  .result-profile { font-size: 15.5px; color: var(--ink); }
+
+  .verdict {
+    margin-top: 24px;
+    padding: 18px 20px;
+    border-left: 3px solid var(--gold);
+    background: var(--paper);
+    border-radius: 0 16px 16px 0;
+    font-family: var(--serif);
+    font-size: 17px;
+    color: var(--pine);
+  }
+
+  .advice {
+    margin-top: 16px;
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+  .advice b { color: var(--pine-soft); }
+
+  .result-actions {
+    margin-top: 28px;
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .secondary-btn {
+    background: var(--card);
+    border: 1px solid var(--line);
+    color: var(--pine);
+    border-radius: 12px;
+    padding: 15px 24px;
+    font-size: 15px;
+    letter-spacing: 0.08em;
+    transition: border-color 0.2s;
+  }
+  .secondary-btn:hover { border-color: var(--gold); }
+
+  .result-oc-name {
+    text-align: center;
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin-top: 18px;
+  }
+  .result-oc-name b { color: var(--pine); }
+
+  /* ===== 页脚 ===== */
+  .footer {
+    margin-top: 40px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--ink-soft);
+    letter-spacing: 0.1em;
+  }
+
+  /* ===== 窄屏 ===== */
+  @media (max-width: 560px) {
+    .wrap { padding: 22px 16px 48px; }
+    .home-notes { grid-template-columns: 1fr; }
+    .result-actions { flex-direction: column; }
+    .result-actions .primary-btn,
+    .result-actions .secondary-btn { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===== 视图：首页 ===== -->
+  <section class="view active" id="view-home">
+    <header class="home-header">
+      <span class="eyebrow">Botanical Profile</span>
+      <h1 class="home-title">OC 花谱鉴定</h1>
+      <p class="home-sub">透过九个关于性格、处事与情感的问题，为你的 OC 寻到一株气质相合的花，记下他的花语与模样。</p>
+    </header>
+
+    <div class="home-art">
+      <img src="https://aka.doubaocdn.com/s/ZbJbndQbVj" alt="白百合水彩图鉴">
+    </div>
+
+    <div class="name-panel">
+      <label for="oc-name">OC 的名字（可留空）</label>
+      <div class="name-row">
+        <input id="oc-name" type="text" maxlength="12" placeholder="写下他/她的称呼" autocomplete="off">
+        <button class="primary-btn" id="start-btn">开始鉴定</button>
+      </div>
+    </div>
+
+    <div class="home-notes">
+      <div class="note"><strong>9</strong>道性格题目</div>
+      <div class="note"><strong>8</strong>种花卉原型</div>
+      <div class="note"><strong>1</strong>份专属花谱</div>
+    </div>
+
+    <p class="footer">花谱仅供娱乐，OC 的模样始终由你定义</p>
+  </section>
+
+  <!-- ===== 视图：答题 ===== -->
+  <section class="view" id="view-quiz">
+    <div class="quiz-top">
+      <span class="quiz-count"><b id="q-now">1</b> / <span id="q-total">9</span></span>
+      <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
+    </div>
+
+    <h2 class="question" id="question-text"></h2>
+    <div class="options" id="options"></div>
+
+    <div class="quiz-foot">
+      <button class="ghost-btn" id="prev-btn">上一题</button>
+      <span class="ghost-btn" id="hint-text">选择最贴近 OC 的一项</span>
+    </div>
+  </section>
+
+  <!-- ===== 视图：结果 ===== -->
+  <section class="view" id="view-result">
+    <div class="result-card">
+      <div class="result-hero">
+        <span class="result-index" id="result-index"></span>
+        <h1 class="result-name" id="result-name"></h1>
+        <p class="result-latin" id="result-latin"></p>
+        <div class="result-img"><img id="result-img" alt="结果花卉水彩图鉴"></div>
+      </div>
+      <div class="result-body">
+        <span class="flower-lang" id="flower-lang"></span>
+        <div class="tags" id="result-tags"></div>
+
+        <h3 class="result-section-title">花相解析</h3>
+        <p class="result-profile" id="result-profile"></p>
+
+        <div class="verdict" id="result-verdict"></div>
+
+        <p class="advice" id="result-advice"></p>
+      </div>
+    </div>
+
+    <p class="result-oc-name">这株花，属于 <b id="result-oc-name"></b></p>
+
+    <div class="result-actions">
+      <button class="primary-btn" id="retry-btn">重新鉴定</button>
+      <button class="secondary-btn" id="home-btn">返回花谱首页</button>
+    </div>
+
+    <p class="footer">若想换个角度重测，可随时回到首页</p>
+  </section>
+
+</div>
+
+<script>
+/* ===== 花型数据库 ===== */
+var FLOWERS = {
+  lily: {
+    name: "白百合",
+    latin: "Lilium candidum",
+    color: "#7C9A82",
+    image: "https://aka.doubaocdn.com/s/ZbJbndQbVj",
+    lang: "花语 · 纯净、尊严、疏离的温柔",
+    tags: ["高洁", "外冷内热", "有距离感", "自持"],
+    profile: "你的 OC 像一枝白百合，洁净、端正，自带一段与人之间的距离。不轻易袒露内里，旁人初见只觉得清冷自持，真正走近后才看见柔软而专一的真心。原则性强，不屑于讨好，也因此容易被误读为骄傲。",
+    verdict: "高处不胜寒，花开自有香。",
+    advice: "建议：给他一个肯安静留下来的人，让他不必一直端着。"
+  },
+  sunflower: {
+    name: "向日葵",
+    latin: "Helianthus annuus",
+    color: "#D9A62E",
+    image: "https://aka.doubaocdn.com/s/a9WVkeZtSA",
+    lang: "花语 · 忠诚、明朗、向着光",
+    tags: ["热忱", "乐观", "能量源", "直率"],
+    profile: "你的 OC 是向日葵型，情绪明亮，行动力强，天然朝向温暖与希望。身边人很容易被他带动，他也习惯把阳光分给别人；只是偶尔也会在没人看见时，悄悄累得抬不起头。",
+    verdict: "走到哪里，就把光带到哪里。",
+    advice: "建议：允许自己阴天，不必永远朝着太阳。"
+  },
+  blackrose: {
+    name: "黑玫瑰",
+    latin: "Rosa 'Black Baccara'",
+    color: "#4A1F2B",
+    image: "https://aka.doubaocdn.com/s/0yDpiP3dQs",
+    lang: "花语 · 神秘、执念、危险的吸引",
+    tags: ["深沉", "掌控欲", "矛盾", "不可直视"],
+    profile: "你的 OC 带着黑玫瑰的气息，浓烈、幽暗、难以被看穿。心思重，情绪藏得深，爱憎都走向极端，有一种让人又怕又想靠近的危险魅力。他不轻易交底，一旦认定便是不容置疑的占有。",
+    verdict: "最暗的夜色里，开着最烈的花。",
+    advice: "建议：学会把刀放下一寸，真正的亲近不必靠壁垒维持。"
+  },
+  lavender: {
+    name: "薰衣草",
+    latin: "Lavandula angustifolia",
+    color: "#8E86B8",
+    image: "https://aka.doubaocdn.com/s/nAqBlmvWNd",
+    lang: "花语 · 等待、治愈、无声的安抚",
+    tags: ["温柔", "安静", "共情力强", "慢热"],
+    profile: "你的 OC 是薰衣草型，气味淡而持久，性格安静克制。擅长察觉别人的情绪，习惯把自己放轻、把别人顾好；内心敏感易碎，却总在不声不响地治愈周围。",
+    verdict: "不必盛开，已经是温柔本身。",
+    advice: "建议：先接住自己的情绪，再去安抚别人。"
+  },
+  camellia: {
+    name: "白山茶",
+    latin: "Camellia japonica",
+    color: "#6E8B74",
+    image: "https://aka.doubaocdn.com/s/nMAUld4WT0",
+    lang: "花语 · 坚韧、克制、沉静的深情",
+    tags: ["倔强", "内敛", "持久", "不张扬"],
+    profile: "你的 OC 如山茶，开得安静，落得也从容。外表温吞，内里却有一股拧不断的韧劲；不喧哗、不攀附，认定的人与事能守很多年。情绪不外露，委屈习惯自己消化。",
+    verdict: "慢一点开，也慢一点谢。",
+    advice: "建议：把委屈说出口，坚韧不等于独自硬扛。"
+  },
+  wisteria: {
+    name: "紫藤",
+    latin: "Wisteria sinensis",
+    color: "#A393C7",
+    image: "https://aka.doubaocdn.com/s/kVlFMD96ol",
+    lang: "花语 · 缠绵、思念、忧郁的浪漫",
+    tags: ["浪漫", "念旧", "内敛", "多情"],
+    profile: "你的 OC 带着紫藤的气质，温柔缠绵，思绪绵长，容易沉溺于回忆与未竟的遗憾。情感细腻含蓄，不擅长热烈表达，却会在心里反复怀念某个人、某段时光。",
+    verdict: "垂落的花穗里，全是没说出口的牵挂。",
+    advice: "建议：让牵挂落地，别总把自己留在过去的藤架上。"
+  },
+  briar: {
+    name: "荆棘蔷薇",
+    latin: "Rosa rubiginosa",
+    color: "#B23A48",
+    image: "https://aka.doubaocdn.com/s/gjcheYO3ay",
+    lang: "花语 · 矛盾、热烈、带刺的真心",
+    tags: ["矛盾", "锋利", "重感情", "自我保护"],
+    profile: "你的 OC 是荆棘蔷薇，花朵艳丽，枝上长满尖刺。渴望亲近又害怕受伤，于是先用锋利武装自己；爱起来炙热，受了伤也绝不示弱。靠近他的人，既要接得住刺，也要等到花软下来的那一刻。",
+    verdict: "满身是刺，心却最软。",
+    advice: "建议：分清谁值得卸下防备，别把温柔都留给误会。"
+  },
+  lilyvalley: {
+    name: "铃兰",
+    latin: "Convallaria majalis",
+    color: "#9DBE9A",
+    image: "https://aka.doubaocdn.com/s/s2W9STtQRN",
+    lang: "花语 · 纤细、纯净、归来的幸福",
+    tags: ["敏感", "纯净", "怯懦", "易感"],
+    profile: "你的 OC 是铃兰型，娇小、安静、气息清浅。心思细如叶脉，容易受惊，也容易被一点点善意打动。世界在他眼里被放大了声响，他习惯缩在角落，却把每一份温柔都记得清清楚楚。",
+    verdict: "小小的铃铛，轻轻摇出幸福。",
+    advice: "建议：慢慢长大，不必急着变成很勇敢的人。"
+  }
+};
+
+/* 花型展示顺序（并列时按此优先） */
+var ORDER = ["lily", "sunflower", "blackrose", "lavender", "camellia", "wisteria", "briar", "lilyvalley"];
+
+/* ===== 题库：score 为各花型加权分 ===== */
+var QUESTIONS = [
+  {
+    text: "如果用一种天气形容 OC 的日常气质，更接近？",
+    options: [
+      { text: "晴朗无风的白昼，通透坦荡", score: { sunflower: 2 } },
+      { text: "晚春的薄雾，安静地弥散开来", score: { lavender: 2, wisteria: 1 } },
+      { text: "阴云压低的傍晚，看不真切", score: { blackrose: 2 } },
+      { text: "山涧清朗的晨光，洁净而疏远", score: { lily: 2 } }
+    ]
+  },
+  {
+    text: "在人群之中，OC 通常站在什么位置？",
+    options: [
+      { text: "自然而然的中心，带动着气氛", score: { sunflower: 2 } },
+      { text: "安静待在角落，默默观察别人", score: { lavender: 2, lilyvalley: 1 } },
+      { text: "站在稍远处，保持自己的节奏", score: { lily: 2, camellia: 1 } },
+      { text: "若即若离，让人摸不透立场", score: { blackrose: 2 } }
+    ]
+  },
+  {
+    text: "面对在意的人，OC 表达感情的方式是？",
+    options: [
+      { text: "直接热烈，让人一目了然", score: { briar: 2, sunflower: 1 } },
+      { text: "默默记得细节，长久地照顾", score: { camellia: 2, lavender: 1 } },
+      { text: "藏在心里，反复想念却不说出口", score: { wisteria: 2 } },
+      { text: "保持得体距离，等对方先走近", score: { lily: 2 } }
+    ]
+  },
+  {
+    text: "遭遇背叛或辜负时，OC 更可能？",
+    options: [
+      { text: "伤口难愈，筑起更深的壁垒", score: { blackrose: 2 } },
+      { text: "默默咽下，继续守住自己的原则", score: { camellia: 2 } },
+      { text: "愤怒地竖起尖刺，嘴上绝不认输", score: { briar: 2 } },
+      { text: "独自难过很久，反复回想", score: { lilyvalley: 2, wisteria: 1 } }
+    ]
+  },
+  {
+    text: "OC 内心最在意的东西是？",
+    options: [
+      { text: "尊严与清白，不想被人误解", score: { lily: 2 } },
+      { text: "被需要、被爱着的充实感", score: { sunflower: 2 } },
+      { text: "一段放不下的回忆，或一个人", score: { wisteria: 2 } },
+      { text: "心里那点不肯妥协的韧劲", score: { camellia: 2, briar: 1 } }
+    ]
+  },
+  {
+    text: "别人对 OC 最常见的第一印象是？",
+    options: [
+      { text: "温暖、好相处、有活力", score: { sunflower: 2 } },
+      { text: "冷淡、有距离、不好接近", score: { lily: 2, blackrose: 1 } },
+      { text: "温柔安静，让人放松下来", score: { lavender: 2 } },
+      { text: "神秘，猜不透他在想什么", score: { blackrose: 2, wisteria: 1 } }
+    ]
+  },
+  {
+    text: "做决定时，OC 更偏向哪一种？",
+    options: [
+      { text: "跟着直觉和情绪走，爱憎分明", score: { briar: 2 } },
+      { text: "反复斟酌，顾及别人的感受", score: { lavender: 2, lilyvalley: 1 } },
+      { text: "冷静理性，按自己的标准来", score: { blackrose: 2, lily: 1 } },
+      { text: "谨慎犹豫，害怕选错", score: { lilyvalley: 2 } }
+    ]
+  },
+  {
+    text: "理想中的生活更接近哪一种？",
+    options: [
+      { text: "热闹、充实，一直在奔赴什么", score: { sunflower: 2 } },
+      { text: "僻静安稳，有自己的一方天地", score: { camellia: 2, lavender: 1 } },
+      { text: "浪漫悠远，常与回忆为伴", score: { wisteria: 2 } },
+      { text: "简单清净，不被过多打扰", score: { lilyvalley: 2, lily: 1 } }
+    ]
+  },
+  {
+    text: "如果 OC 是一株植物，他最像？",
+    options: [
+      { text: "攀附篱笆、带刺生长的野蔷薇", score: { briar: 2 } },
+      { text: "低垂成串、随风摇曳的花穗", score: { wisteria: 2 } },
+      { text: "贴地细弱、铃铛般的小花", score: { lilyvalley: 2 } },
+      { text: "清艳独立、站在高处的花", score: { camellia: 2, lily: 1 } }
+    ]
+  }
+];
+
+/* ===== 应用状态 ===== */
+var state = {
+  current: 0,
+  scores: {},
+  answers: [],
+  ocName: ""
+};
+
+/* ===== 视图工具 ===== */
+function showView(id) {
+  var views = document.querySelectorAll(".view");
+  for (var i = 0; i < views.length; i++) {
+    views[i].classList.remove("active");
+  }
+  document.getElementById(id).classList.add("active");
+  window.scrollTo({ top: 0, behavior: "auto" });
+}
+
+function resetState() {
+  state.current = 0;
+  state.scores = {};
+  state.answers = [];
+  for (var k in FLOWERS) state.scores[k] = 0;
+}
+
+/* ===== 答题渲染 ===== */
+function renderQuiz() {
+  var q = QUESTIONS[state.current];
+  document.getElementById("q-now").textContent = state.current + 1;
+  document.getElementById("q-total").textContent = QUESTIONS.length;
+  document.getElementById("progress-bar").style.width = ((state.current) / QUESTIONS.length * 100) + "%";
+  document.getElementById("question-text").textContent = q.text;
+
+  var box = document.getElementById("options");
+  box.innerHTML = "";
+  var marks = ["甲", "乙", "丙", "丁"];
+
+  q.options.forEach(function (opt, idx) {
+    var btn = document.createElement("button");
+    btn.className = "option";
+    btn.type = "button";
+
+    var mark = document.createElement("span");
+    mark.className = "mark";
+    mark.textContent = marks[idx];
+
+    var txt = document.createElement("span");
+    txt.textContent = opt.text;
+
+    btn.appendChild(mark);
+    btn.appendChild(txt);
+    btn.addEventListener("click", function () { chooseOption(opt); });
+    box.appendChild(btn);
+  });
+
+  document.getElementById("prev-btn").disabled = state.current === 0;
+}
+
+function chooseOption(opt) {
+  /* 记录本次选择并计分 */
+  state.answers[state.current] = opt;
+  for (var k in opt.score) {
+    state.scores[k] += opt.score[k];
+  }
+  state.current += 1;
+
+  if (state.current >= QUESTIONS.length) {
+    showResult();
+  } else {
+    renderQuiz();
+  }
+}
+
+/* ===== 结果计算 ===== */
+function computeFlower() {
+  var bestKey = ORDER[0];
+  var bestScore = -1;
+  ORDER.forEach(function (key) {
+    if (state.scores[key] > bestScore) {
+      bestScore = state.scores[key];
+      bestKey = key;
+    }
+  });
+  return bestKey;
+}
+
+function showResult() {
+  var key = computeFlower();
+  var f = FLOWERS[key];
+
+  var idx = ORDER.indexOf(key) + 1;
+  document.getElementById("result-index").textContent = "No." + (idx < 10 ? "0" + idx : idx) + " · 花谱归档";
+  document.getElementById("result-name").textContent = f.name;
+  document.getElementById("result-latin").textContent = f.latin;
+  document.getElementById("result-img").src = f.image;
+  document.getElementById("result-img").alt = f.name + "水彩图鉴";
+
+  var lang = document.getElementById("flower-lang");
+  lang.textContent = f.lang;
+  lang.style.background = f.color;
+
+  var tagsBox = document.getElementById("result-tags");
+  tagsBox.innerHTML = "";
+  f.tags.forEach(function (t) {
+    var tag = document.createElement("span");
+    tag.className = "tag";
+    tag.textContent = t;
+    tagsBox.appendChild(tag);
+  });
+
+  document.getElementById("result-profile").textContent = f.profile;
+  document.getElementById("result-verdict").textContent = "「 " + f.verdict + " 」";
+  document.getElementById("result-advice").textContent = f.advice;
+
+  var name = state.ocName.trim() || "无名之花";
+  document.getElementById("result-oc-name").textContent = name;
+
+  document.getElementById("progress-bar").style.width = "100%";
+  showView("view-result");
+}
+
+/* ===== 事件绑定 ===== */
+document.getElementById("start-btn").addEventListener("click", function () {
+  state.ocName = document.getElementById("oc-name").value;
+  resetState();
+  showView("view-quiz");
+  renderQuiz();
+});
+
+document.getElementById("prev-btn").addEventListener("click", function () {
+  if (state.current === 0) return;
+  /* 回退一步：撤销上一题计分 */
+  var prev = state.answers[state.current - 1];
+  if (prev) {
+    for (var k in prev.score) state.scores[k] -= prev.score[k];
+  }
+  state.current -= 1;
+  renderQuiz();
+});
+
+document.getElementById("retry-btn").addEventListener("click", function () {
+  resetState();
+  showView("view-quiz");
+  renderQuiz();
+});
+
+document.getElementById("home-btn").addEventListener("click", function () {
+  resetState();
+  document.getElementById("oc-name").value = "";
+  showView("view-home");
+});
+
+/* 回车在首页直接开始 */
+document.getElementById("oc-name").addEventListener("keydown", function (e) {
+  if (e.key === "Enter") document.getElementById("start-btn").click();
+});
+
+resetState();
+</script>
+</body>
+</html>
